@@ -682,6 +682,9 @@ void menu_vendas(int *cadastro_client, char client_nome[][20], char client_cpf[]
         scanf("%d", &escolha);
 
         switch (escolha) {
+            case 0:
+                printf("Voltando ao menu principal...\n");
+                break;
             case 1:
                 registrar_venda(&cadastro_vendas,*cadastro_client,client_nome,client_cpf,client_cell,client_endereco,client_data,cliente_id,cadastro_carro,modelo,fabricante,ano_fabricacao,id,categoria,estoque,preco);
             break;
