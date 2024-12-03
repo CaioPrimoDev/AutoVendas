@@ -6,8 +6,8 @@
 
 ## Lista de aplicações
 
-- [ ] Terminar de incrementar o arquivo *__CAR_INVENTORY.H__*
-- [ ] Implementar o código único
+- [x] Colocar o programa em structs
+- [ ] Implementar modularização
 - [ ] .
 - [ ] .
 - [ ] .

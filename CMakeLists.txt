@@ -3,5 +3,6 @@ project(AutoVendas C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(AutoVendas main.c
+add_executable(AutoVendas AutoVendas.c
+
 )
