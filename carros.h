@@ -1,6 +1,7 @@
 #ifndef CARROS_H
 #define CARROS_H
-#include "cadastro.h"
+
+#define CAR_MAX 50
 
 typedef struct {
     char modelo[20];
@@ -12,15 +13,18 @@ typedef struct {
     float preco;
 } Carro;
 
+extern int total_carros ;  // Contador de carros
 extern Carro carros[CAR_MAX];
 
-void cadastrar_carro(Carro *carros, Cadastro *cadastro);
-void listar_carros(const Carro *carros, const Cadastro *cadastro);
-void excluir_carro(Carro *carros, const char *modelo, Cadastro *cadastro);
-void editar_carro(Carro *carros, const char *modelo, const Cadastro *cadastro);
-void buscar_carro(const Carro *carros, const char *modelo, const Cadastro *cadastro);
+void cadastrar_carro(Carro *carros);
+void listar_carros(const Carro *carros);
+void excluir_carro(Carro *carros, const char *modelo);
+void editar_carro(Carro *carros, const char *modelo);
+void buscar_carro(const Carro *carros, const char *modelo);
 
-void menu_carros(Carro *carros, Cadastro *cadastro);
+void menu_carros(Carro *carros);
+void inicializarCarro(Carro *carro);
+
 
 
 

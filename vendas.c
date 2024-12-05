@@ -1,15 +1,14 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-
 #include "vendas.h"
-#include "carros.h"
-#include "clientes.h"
 
 
-void registrar_venda(Venda *vendas, const Cliente *clientes, Carro *carros,
-Cadastro *cadastro) {
-    if (cadastro[0].total_clientes == 0 || cadastro[0].total_carros == 0) {
+int total_vendas = 0;
+Venda vendas[VENDAS_MAX] = {0};  // Inicializa a struct Venda
+
+void registrar_venda(Venda *vendas, const Cliente *clientes, Carro *carros) {
+    // Implementação da função registrar_venda
+    if (total_clientes == 0 || total_carros == 0) {
         printf("\n\n< Necessário pelo menos um cliente e um carro cadastrados para registrar uma venda >\n\n");
         return;
     }
@@ -23,7 +22,7 @@ Cadastro *cadastro) {
     scanf(" %[^\n]", nome_cliente);
 
     int cliente_index = -1;
-    for (int i = 0; i < cadastro[0].total_clientes; i++) {
+    for (int i = 0; i < total_clientes; i++) {
         if (strcasecmp(clientes[i].nome, nome_cliente) == 0) {
             cliente_index = i;
             break;
@@ -47,7 +46,7 @@ Cadastro *cadastro) {
     scanf(" %[^\n]", modelo_carro);
 
     int carro_index = -1;
-    for (int i = 0; i < cadastro[0].total_carros; i++) {
+    for (int i = 0; i < total_carros; i++) {
         if (strcasecmp(carros[i].modelo, modelo_carro) == 0) {
             carro_index = i;
             break;
@@ -87,7 +86,7 @@ Cadastro *cadastro) {
 
     if (confirmar == 'S' || confirmar == 's') {
         // Registro da venda
-        Venda *venda = &vendas[cadastro[0].total_vendas];
+        Venda *venda = &vendas[total_vendas];
         strcpy(venda->cliente_nome, cliente.nome);
         venda->id_venda = carro_index;
         venda->quantidade = quantidade;
@@ -97,33 +96,28 @@ Cadastro *cadastro) {
         carros[carro_index].estoque -= quantidade;
 
         // Incrementa o total de vendas
-        cadastro[0].total_vendas++;
+        total_vendas++;
 
         printf("\n### Venda registrada com sucesso! ###\n");
     } else {
         printf("\n### Venda cancelada! ###\n");
     }
 }
-
-void listar_vendas(const Venda *vendas,
-const Cadastro *cadastro) {
-    if (cadastro[0].total_vendas == 0) {
+void listar_vendas(const Venda *vendas) {
+    if (total_vendas == 0) {
         printf("\n\n< Nenhuma venda registrada >\n\n");
         return;
     }
 
-    for (int i = 0; i < cadastro[0].total_vendas; i++) {
+    for (int i = 0; i < total_vendas; i++) {
         printf("\n===========================\n");
         printf("Cliente: %s\nID do carro: %d",vendas[i].cliente_nome, vendas[i].id_venda);
         printf("\n===========================");
         printf("\nQuantidade: %d\nPreço Total: R$ %.2f\n",
                vendas[i].quantidade, vendas[i].preco_total);
-
     }
 }
-
-void menu_vendas(Venda *vendas, const Cliente *clientes, Carro *carros,
-    Cadastro *cadastro) {
+void menu_vendas(Venda *vendas, const Cliente *clientes, Carro *carros) {
     int opcao;
     do {
         printf("\n======== MENU - VENDAS ========\n");
@@ -135,20 +129,24 @@ void menu_vendas(Venda *vendas, const Cliente *clientes, Carro *carros,
 
         switch (opcao) {
             case 1:
-                registrar_venda(vendas, clientes, carros, cadastro);
-            break;
+                registrar_venda(vendas, clientes, carros);
+                break;
             case 2:
-                listar_vendas(vendas, cadastro);
-            break;
+                listar_vendas(vendas);
+                break;
             case 0:
                 printf("\n\nVoltando ao menu principal...\n");
-            break;
+                break;
             default:
                 printf("Opção inválida! Tente novamente.\n");
         }
     } while (opcao != 0);
 }
 
-void chamarMenu_vendas() {
-    menu_vendas(vendas, clientes, carros, cadastro);
+void inicializarVenda(Venda *venda) {
+    // Inicializa os campos da venda
+    strcpy(venda->cliente_nome, "Desconhecido");
+    venda->id_venda = 0;
+    venda->quantidade = 0;
+    venda->preco_total = 0.0f;
 }

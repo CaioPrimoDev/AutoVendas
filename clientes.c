@@ -1,15 +1,16 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "clientes.h"
 
-void cadastrar_cliente(Cliente *clientes,
-    Cadastro *cadastro) {
-    if (cadastro[0].total_clientes >= CLIENT_MAX) {
+int total_clientes = 0;
+Cliente clientes[CLIENT_MAX] = {0};      // Inicializa a struct Cliente
+
+void cadastrar_cliente(Cliente *clientes) {
+    if (total_clientes >= CLIENT_MAX) {
         printf("\n\n!!! Limite de clientes atingido !!!\n\n");
         return;
     }
-    Cliente *cliente = &clientes[cadastro[0].total_clientes];
+    Cliente *cliente = &clientes[total_clientes];
 
     printf("\nNome: ");
     scanf(" %[^\n]", cliente->nome);
@@ -22,19 +23,17 @@ void cadastrar_cliente(Cliente *clientes,
     printf("Data de Cadastro: ");
     scanf(" %[^\n]", cliente->data);
 
-    cliente->id_cliente = cadastro[0].total_clientes;
-    cadastro[0].total_clientes++;
+    cliente->id_cliente = total_clientes;
+    total_clientes++;
 
     printf("\n\n### Cliente cadastrado com sucesso! ###\n\n");
 }
-
-void listar_clientes(const Cliente *clientes,
-const Cadastro *cadastro) {
-    if (cadastro[0].total_clientes == 0) {
+void listar_clientes(const Cliente *clientes) {
+    if (total_clientes == 0) {
         printf("\n\n!!! Nenhum cliente cadastrado !!!\n\n");
         return;
     }
-    for (int i = 0; i < cadastro[0].total_clientes; i++) {
+    for (int i = 0; i < total_clientes; i++) {
         printf("\n\n===========================\n");
         printf("ID - CLIENTE: %d\n", clientes[i].id_cliente);
         printf("===========================\n");
@@ -43,12 +42,10 @@ const Cadastro *cadastro) {
                clientes[i].endereco, clientes[i].data);
     }
 }
-
-void excluir_cliente(Cliente *clientes, const char *termo, const int tipo,
-    Cadastro *cadastro) {
+void excluir_cliente(Cliente *clientes, const char *termo, const int tipo) {
     int encontrado = -1;
 
-    for (int i = 0; i < cadastro[0].total_clientes; i++) {
+    for (int i = 0; i < total_clientes; i++) {
         Cliente cliente = clientes[i];
         if ((tipo == 1 && strcasecmp(cliente.nome, termo) == 0) ||
             (tipo == 2 && strcmp(cliente.cpf, termo) == 0)) {
@@ -63,24 +60,22 @@ void excluir_cliente(Cliente *clientes, const char *termo, const int tipo,
     }
 
     // Deslocar os elementos para preencher o espaço vazio
-    for (int i = encontrado; i < cadastro[0].total_clientes - 1; i++) {
+    for (int i = encontrado; i < total_clientes - 1; i++) {
         clientes[i] = clientes[i + 1];
     }
-    cadastro[0].total_clientes--;
+    total_clientes--;
 
     // Atualizar IDs
-    for (int i = 0; i < cadastro[0].total_clientes; i++) {
+    for (int i = 0; i < total_clientes; i++) {
         clientes[i].id_cliente = i;
     }
 
     printf("Cliente removido com sucesso!\n");
 }
-
-void editar_cliente(Cliente *clientes, const char *termo, const int tipo,
-const Cadastro *cadastro) {
+void editar_cliente(Cliente *clientes, const char *termo, const int tipo) {
     int encontrado = -1;
 
-    for (int i = 0; i < cadastro[0].total_clientes; i++) {
+    for (int i = 0; i < total_clientes; i++) {
         Cliente cliente = clientes[i];
         if ((tipo == 1 && strcasecmp(cliente.nome, termo) == 0) ||
             (tipo == 2 && strcmp(cliente.cpf, termo) == 0)) {
@@ -110,12 +105,10 @@ const Cadastro *cadastro) {
 
     printf("Cliente editado com sucesso!\n");
 }
-
-void buscar_cliente(const Cliente *clientes, const char *termo, const int tipo,
-const Cadastro *cadastro) {
+void buscar_cliente(const Cliente *clientes, const char *termo, const int tipo) {
     int encontrado = 0;
 
-    for (int i = 0; i < cadastro[0].total_clientes; i++) {
+    for (int i = 0; i < total_clientes; i++) {
         Cliente cliente = clientes[i];
         if ((tipo == 1 && strcasecmp(cliente.nome, termo) == 0) ||
             (tipo == 2 && strcmp(cliente.cpf, termo) == 0)) {
@@ -131,9 +124,7 @@ const Cadastro *cadastro) {
         printf("Cliente não encontrado.\n");
     }
 }
-
-void menu_clientes(Cliente *clientes,
-    Cadastro *cadastro) {
+void menu_clientes(Cliente *clientes) {
     int opcao;
     do {
         printf("\n======== MENU - CLIENTES ========\n");
@@ -151,10 +142,10 @@ void menu_clientes(Cliente *clientes,
 
         switch (opcao) {
             case 1:
-                cadastrar_cliente(clientes, cadastro);
+                cadastrar_cliente(clientes);
             break;
             case 2:
-                listar_clientes(clientes, cadastro);
+                listar_clientes(clientes);
             break;
             case 3:
                 printf("\n\nEditar cliente por: ");
@@ -162,7 +153,7 @@ void menu_clientes(Cliente *clientes,
             scanf("%d", &tipo);
             printf("\n\nDigite o termo de busca: ");
             scanf(" %[^\n]", termo);
-            editar_cliente(clientes, termo, tipo, cadastro);
+            editar_cliente(clientes, termo, tipo);
             break;
             case 4:
                 printf("\nExcluir cliente por: ");
@@ -170,7 +161,7 @@ void menu_clientes(Cliente *clientes,
             scanf("%d", &tipo);
             printf("\n\nDigite o termo de busca: ");
             scanf(" %[^\n]", termo);
-            excluir_cliente(clientes, termo, tipo, cadastro);
+            excluir_cliente(clientes, termo, tipo);
             break;
             case 5:
                 printf("Buscar cliente por:");
@@ -178,7 +169,7 @@ void menu_clientes(Cliente *clientes,
             scanf("%d", &tipo);
             printf("\n\nDigite o termo de busca: ");
             scanf(" %[^\n]", termo);
-            buscar_cliente(clientes, termo, tipo, cadastro);
+            buscar_cliente(clientes, termo, tipo);
             break;
             case 0:
                 printf("\n\nVoltando ao menu principal...\n");
@@ -189,7 +180,12 @@ void menu_clientes(Cliente *clientes,
     } while (opcao != 0);
 }
 
-
-void chamarMenu_clientes() {
-    menu_clientes(clientes, cadastro);
+void inicializarCliente(Cliente *cliente) {
+    // Inicializa os campos do cliente
+    strcpy(cliente->nome, "");
+    strcpy(cliente->cpf, "");
+    strcpy(cliente->cell, "");
+    strcpy(cliente->endereco, "");
+    strcpy(cliente->data, "");
+    cliente->id_cliente = 0;
 }

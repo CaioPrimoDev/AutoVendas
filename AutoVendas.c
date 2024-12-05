@@ -1,7 +1,11 @@
 #include <stdio.h>
-#include "cadastro.h"
+#include "carros.h"
+#include "clientes.h"
+#include "vendas.h"
 
 int menu_principal();
+
+void inicializarCadastro();
 
 int main() {
 
@@ -12,16 +16,16 @@ int main() {
         opcao = menu_principal();
         switch (opcao) {
             case 1:
-                chamarMenu_carros();
-                //menu_carros(carros, cadastro);
+                //chamarMenu_carros();
+                menu_carros(carros);
             break;
             case 2:
-                chamarMenu_clientes();
-                //menu_clientes(clientes, cadastro);
+                //chamarMenu_clientes();
+                menu_clientes(clientes);
             break;
             case 3:
-                chamarMenu_vendas();
-                //menu_vendas(vendas, clientes, carros, cadastro);
+                //chamarMenu_vendas();
+                menu_vendas(vendas, clientes, carros);
             break;
             case 0:
                 printf("Finalizando o programa...\n");
@@ -35,7 +39,6 @@ int main() {
 }
 
 int menu_principal() {
-    char vazio[] = {"  "};
     int opcao;
     printf("\n========== MENU PRINCIPAL ==========\n");
     printf("1. Gerenciar Carros\n");
@@ -45,6 +48,14 @@ int menu_principal() {
     printf(">");
     scanf(" %d", &opcao);
     return opcao;
+}
+
+void inicializarCadastro() {
+    for (int i = 0; i < VENDAS_MAX; i++) {
+        inicializarCliente(&clientes[i]);
+        inicializarCarro(&carros[i]);
+        inicializarVenda(&vendas[i]);
+    }
 }
 
 
