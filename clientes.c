@@ -1,17 +1,43 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "clientes.h"
 
+// Variáveis globais
+Cliente *clientes_ptr = NULL;
+Cliente *clientes = NULL;
+int capacidade_clientes = 0;
 int total_clientes = 0;
-Cliente clientes[CLIENT_MAX] = {0};      // Inicializa a struct Cliente
 
-void cadastrar_cliente(Cliente *clientes) {
-    if (total_clientes >= CLIENT_MAX) {
-        printf("\n\n!!! Limite de clientes atingido !!!\n\n");
-        return;
+void cadastrar_cliente() {
+    // Inicializa memória apenas se clientes_ptr for NULL
+    if (clientes_ptr == NULL) {
+        printf("Inicializando clientes_ptr...\n");
+        clientes_ptr = malloc(10 * sizeof(Cliente));
+        if (clientes_ptr == NULL) {
+            printf("\n\n!!! Erro ao alocar memória !!!\n\n");
+            return;
+        }
+        capacidade_clientes = 10;
+        printf("clientes_ptr inicializado com capacidade: %d\n", capacidade_clientes);
     }
-    Cliente *cliente = &clientes[total_clientes];
 
+    // Verifica se é necessário realocar memória
+    if (total_clientes >= capacidade_clientes) {
+        printf("Re-alocando memória: capacidade atual = %d, total_clientes = %d\n", capacidade_clientes, total_clientes);
+        int nova_capacidade = capacidade_clientes * 2;
+        Cliente *novo_array = realloc(clientes_ptr, nova_capacidade * sizeof(Cliente));
+        if (novo_array == NULL) {
+            printf("\n\n!!! Erro ao alocar memória !!!\n\n");
+            return;
+        }
+        clientes_ptr = novo_array;
+        capacidade_clientes = nova_capacidade;
+        printf("Re-alocação concluída. Nova capacidade: %d\n", capacidade_clientes);
+    }
+
+    // Cadastra o cliente no array
+    Cliente *cliente = &clientes_ptr[total_clientes];
     printf("\nNome: ");
     scanf(" %[^\n]", cliente->nome);
     printf("CPF: ");
@@ -23,30 +49,38 @@ void cadastrar_cliente(Cliente *clientes) {
     printf("Data de Cadastro: ");
     scanf(" %[^\n]", cliente->data);
 
+    // Atribui ID ao cliente
     cliente->id_cliente = total_clientes;
     total_clientes++;
 
     printf("\n\n### Cliente cadastrado com sucesso! ###\n\n");
 }
-void listar_clientes(const Cliente *clientes) {
+void listar_clientes() {
     if (total_clientes == 0) {
         printf("\n\n!!! Nenhum cliente cadastrado !!!\n\n");
         return;
     }
-    for (int i = 0; i < total_clientes; i++) {
-        printf("\n\n===========================\n");
-        printf("ID - CLIENTE: %d\n", clientes[i].id_cliente);
-        printf("===========================\n");
-        printf("Nome: %s\nCPF: %s\nCelular: %s\nEndereco: %s\nData: %s\n",
-               clientes[i].nome, clientes[i].cpf, clientes[i].cell,
-               clientes[i].endereco, clientes[i].data);
-    }
-}
-void excluir_cliente(Cliente *clientes, const char *termo, const int tipo) {
-    int encontrado = -1;
 
     for (int i = 0; i < total_clientes; i++) {
-        Cliente cliente = clientes[i];
+        printf("\n\n===========================\n");
+        printf("ID - CLIENTE: %d\n", clientes_ptr[i].id_cliente);
+        printf("===========================\n");
+        printf("Nome: %s\nCPF: %s\nCelular: %s\nEndereco: %s\nData: %s\n",
+               clientes_ptr[i].nome, clientes_ptr[i].cpf, clientes_ptr[i].cell,
+               clientes_ptr[i].endereco, clientes_ptr[i].data);
+    }
+}
+void excluir_cliente(const char *termo, int tipo) {
+    if (clientes_ptr == NULL || total_clientes == 0) {
+        printf("Nenhum cliente para excluir.\n");
+        return;
+    }
+
+    int encontrado = -1;
+
+    // Procurar o cliente pelo nome ou CPF
+    for (int i = 0; i < total_clientes; i++) {
+        Cliente cliente = clientes_ptr[i];
         if ((tipo == 1 && strcasecmp(cliente.nome, termo) == 0) ||
             (tipo == 2 && strcmp(cliente.cpf, termo) == 0)) {
             encontrado = i;
@@ -59,24 +93,41 @@ void excluir_cliente(Cliente *clientes, const char *termo, const int tipo) {
         return;
     }
 
-    // Deslocar os elementos para preencher o espaço vazio
+    // Remover o cliente encontrado deslocando os elementos
     for (int i = encontrado; i < total_clientes - 1; i++) {
-        clientes[i] = clientes[i + 1];
+        clientes_ptr[i] = clientes_ptr[i + 1];
     }
-    total_clientes--;
+    total_clientes--;  // Decrementa total_clientes
 
-    // Atualizar IDs
+    // Atualizar os IDs de todos os clientes
     for (int i = 0; i < total_clientes; i++) {
-        clientes[i].id_cliente = i;
+        clientes_ptr[i].id_cliente = i;
+    }
+
+    // Reajustar a capacidade se necessário
+    if (total_clientes < capacidade_clientes / 2 && capacidade_clientes > 10) {
+        int nova_capacidade = capacidade_clientes / 2;
+        Cliente *novo_array = (Cliente *)realloc(clientes_ptr, nova_capacidade * sizeof(Cliente));
+        if (novo_array != NULL) {
+            clientes_ptr = novo_array;
+            capacidade_clientes = nova_capacidade;
+            printf("Capacidade reduzida para %d após exclusão.\n", capacidade_clientes);
+        }
     }
 
     printf("Cliente removido com sucesso!\n");
 }
-void editar_cliente(Cliente *clientes, const char *termo, const int tipo) {
+void editar_cliente(const char *termo, int tipo) {
+    if (clientes_ptr == NULL || total_clientes == 0) {
+        printf("Nenhum cliente para editar.\n");
+        return;
+    }
+
     int encontrado = -1;
 
+    // Procurar o cliente com base no termo e no tipo
     for (int i = 0; i < total_clientes; i++) {
-        Cliente cliente = clientes[i];
+        Cliente cliente = clientes_ptr[i];
         if ((tipo == 1 && strcasecmp(cliente.nome, termo) == 0) ||
             (tipo == 2 && strcmp(cliente.cpf, termo) == 0)) {
             encontrado = i;
@@ -89,9 +140,11 @@ void editar_cliente(Cliente *clientes, const char *termo, const int tipo) {
         return;
     }
 
-    Cliente *cliente = &clientes[encontrado];
+    // Obter referência ao cliente encontrado
+    Cliente *cliente = &clientes_ptr[encontrado];
 
-    printf("Editando cliente\n");
+    // Editar as informações do cliente
+    printf("Editando cliente (ID: %d)\n", cliente->id_cliente);
     printf("Novo nome: ");
     scanf(" %[^\n]", cliente->nome);
     printf("Novo CPF: ");
@@ -103,13 +156,19 @@ void editar_cliente(Cliente *clientes, const char *termo, const int tipo) {
     printf("Nova data de cadastro: ");
     scanf(" %[^\n]", cliente->data);
 
-    printf("Cliente editado com sucesso!\n");
+    printf("\nCliente editado com sucesso!\n");
 }
-void buscar_cliente(const Cliente *clientes, const char *termo, const int tipo) {
+void buscar_cliente(const char *termo, int tipo) {
+    if (clientes_ptr == NULL || total_clientes == 0) {
+        printf("Nenhum cliente cadastrado para buscar.\n");
+        return;
+    }
+
     int encontrado = 0;
 
+    // Itera sobre os clientes para encontrar o termo
     for (int i = 0; i < total_clientes; i++) {
-        Cliente cliente = clientes[i];
+        Cliente cliente = clientes_ptr[i];
         if ((tipo == 1 && strcasecmp(cliente.nome, termo) == 0) ||
             (tipo == 2 && strcmp(cliente.cpf, termo) == 0)) {
             printf("\n===========================\n");
@@ -120,6 +179,7 @@ void buscar_cliente(const Cliente *clientes, const char *termo, const int tipo) 
             }
     }
 
+    // Exibe mensagem caso nenhum cliente seja encontrado
     if (!encontrado) {
         printf("Cliente não encontrado.\n");
     }
@@ -142,7 +202,7 @@ void menu_clientes(Cliente *clientes) {
 
         switch (opcao) {
             case 1:
-                cadastrar_cliente(clientes);
+                cadastrar_cliente(&clientes);
             break;
             case 2:
                 listar_clientes(clientes);
@@ -153,7 +213,7 @@ void menu_clientes(Cliente *clientes) {
             scanf("%d", &tipo);
             printf("\n\nDigite o termo de busca: ");
             scanf(" %[^\n]", termo);
-            editar_cliente(clientes, termo, tipo);
+            editar_cliente(termo, tipo);
             break;
             case 4:
                 printf("\nExcluir cliente por: ");
@@ -161,7 +221,7 @@ void menu_clientes(Cliente *clientes) {
             scanf("%d", &tipo);
             printf("\n\nDigite o termo de busca: ");
             scanf(" %[^\n]", termo);
-            excluir_cliente(clientes, termo, tipo);
+            excluir_cliente(termo, tipo);
             break;
             case 5:
                 printf("Buscar cliente por:");
@@ -169,7 +229,7 @@ void menu_clientes(Cliente *clientes) {
             scanf("%d", &tipo);
             printf("\n\nDigite o termo de busca: ");
             scanf(" %[^\n]", termo);
-            buscar_cliente(clientes, termo, tipo);
+            buscar_cliente(termo, tipo);
             break;
             case 0:
                 printf("\n\nVoltando ao menu principal...\n");

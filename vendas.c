@@ -1,13 +1,42 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "vendas.h"
 
-
+Venda *vendas_ptr = NULL;
 int total_vendas = 0;
+int capacidade_vendas = 0;
 Venda vendas[VENDAS_MAX] = {0};  // Inicializa a struct Venda
 
-void registrar_venda(Venda *vendas, const Cliente *clientes, Carro *carros) {
-    // Implementação da função registrar_venda
+void registrar_venda() {
+    // Inicializa memória apenas se vendas_ptr for NULL
+    if (vendas_ptr == NULL) {
+        printf("Inicializando vendas_ptr...\n");
+        vendas_ptr = malloc(10 * sizeof(Venda));
+        if (vendas_ptr == NULL) {
+            printf("\n\n!!! Erro ao alocar memória !!!\n\n");
+            return;
+        }
+        capacidade_vendas = 10;
+        total_vendas = 0;
+        printf("vendas_ptr inicializado com capacidade: %d\n", capacidade_vendas);
+    }
+
+    // Verifica se é necessário realocar memória
+    if (total_vendas >= capacidade_vendas) {
+        printf("Re-alocando memória: capacidade atual = %d, total_vendas = %d\n", capacidade_vendas, total_vendas);
+        int nova_capacidade = capacidade_vendas * 2;
+        Venda *novo_array = realloc(vendas_ptr, nova_capacidade * sizeof(Venda));
+        if (novo_array == NULL) {
+            printf("\n\n!!! Erro ao realocar memória !!!\n\n");
+            return;
+        }
+        vendas_ptr = novo_array;
+        capacidade_vendas = nova_capacidade;
+        printf("Re-alocação concluída. Nova capacidade: %d\n", capacidade_vendas);
+    }
+
+    // Verifica se há clientes e carros cadastrados
     if (total_clientes == 0 || total_carros == 0) {
         printf("\n\n< Necessário pelo menos um cliente e um carro cadastrados para registrar uma venda >\n\n");
         return;
@@ -23,7 +52,7 @@ void registrar_venda(Venda *vendas, const Cliente *clientes, Carro *carros) {
 
     int cliente_index = -1;
     for (int i = 0; i < total_clientes; i++) {
-        if (strcasecmp(clientes[i].nome, nome_cliente) == 0) {
+        if (strcasecmp(clientes_ptr[i].nome, nome_cliente) == 0) {
             cliente_index = i;
             break;
         }
@@ -34,20 +63,13 @@ void registrar_venda(Venda *vendas, const Cliente *clientes, Carro *carros) {
         return;
     }
 
-    // Exibe informações do cliente
-    Cliente cliente = clientes[cliente_index];
-    printf("\n===== Informações do Cliente =====\n");
-    printf("- Nome: %s\n- CPF: %s\n- Celular: %s\n- Endereço: %s\n",
-           cliente.nome, cliente.cpf, cliente.cell, cliente.endereco);
-    printf("\n==================================\n");
-
     // Busca pelo modelo do carro
     printf("\nModelo do Carro: ");
     scanf(" %[^\n]", modelo_carro);
 
     int carro_index = -1;
     for (int i = 0; i < total_carros; i++) {
-        if (strcasecmp(carros[i].modelo, modelo_carro) == 0) {
+        if (strcasecmp(carros_ptr[i].modelo, modelo_carro) == 0) {
             carro_index = i;
             break;
         }
@@ -58,25 +80,19 @@ void registrar_venda(Venda *vendas, const Cliente *clientes, Carro *carros) {
         return;
     }
 
-    // Exibe informações do carro
-    Carro carro = carros[carro_index];
-    printf("\n===== Informações do Carro =====\n");
-    printf("Modelo: %s\nFabricante: %s\nAno: %d\nCategoria: %d\nEstoque Disponível: %d\nPreço Unitário: %.2f\n",
-           carro.modelo, carro.fabricante, carro.ano_fabricacao, carro.categoria, carro.estoque, carro.preco);
-    printf("\n=================================\n");
-
     // Verifica estoque antes de continuar
-    printf("\nQuantidade Disponível no Estoque: %d\n", carro.estoque);
+    Carro *carro = &carros_ptr[carro_index];
+    printf("\nQuantidade Disponível no Estoque: %d\n", carro->estoque);
     printf("\nQuantidade desejada: ");
     scanf("%d", &quantidade);
 
-    if (quantidade > carro.estoque) {
+    if (quantidade > carro->estoque) {
         printf("\n\n!!! Estoque insuficiente !!!\n\n");
         return;
     }
 
     // Calcula preço total
-    float preco_total = quantidade * carro.preco; // NOLINT(*-narrowing-conversions)
+    float preco_total = (float) quantidade * carro->preco;
     printf("\nPreço total da venda: R$ %.2f\n", preco_total);
 
     // Confirmação final
@@ -86,14 +102,14 @@ void registrar_venda(Venda *vendas, const Cliente *clientes, Carro *carros) {
 
     if (confirmar == 'S' || confirmar == 's') {
         // Registro da venda
-        Venda *venda = &vendas[total_vendas];
-        strcpy(venda->cliente_nome, cliente.nome);
-        venda->id_venda = carro_index;
+        Venda *venda = &vendas_ptr[total_vendas];
+        strcpy(venda->cliente_nome, clientes_ptr[cliente_index].nome);
+        venda->id_venda = carro->id_carro;
         venda->quantidade = quantidade;
         venda->preco_total = preco_total;
 
         // Atualiza o estoque
-        carros[carro_index].estoque -= quantidade;
+        carro->estoque -= quantidade;
 
         // Incrementa o total de vendas
         total_vendas++;
@@ -103,19 +119,24 @@ void registrar_venda(Venda *vendas, const Cliente *clientes, Carro *carros) {
         printf("\n### Venda cancelada! ###\n");
     }
 }
-void listar_vendas(const Venda *vendas) {
-    if (total_vendas == 0) {
-        printf("\n\n< Nenhuma venda registrada >\n\n");
+void listar_vendas() {
+    // Verifica se o ponteiro de vendas está alocado e se há vendas registradas
+    if (vendas_ptr == NULL || total_vendas == 0) {
+        printf("\n\n!!! Nenhuma venda registrada !!!\n\n");
         return;
     }
 
+    // Percorre e exibe as vendas cadastradas
     for (int i = 0; i < total_vendas; i++) {
         printf("\n===========================\n");
-        printf("Cliente: %s\nID do carro: %d",vendas[i].cliente_nome, vendas[i].id_venda);
-        printf("\n===========================");
-        printf("\nQuantidade: %d\nPreço Total: R$ %.2f\n",
-               vendas[i].quantidade, vendas[i].preco_total);
+        printf("Cliente: %s\nID do carro: %d\n", vendas_ptr[i].cliente_nome, vendas_ptr[i].id_venda);
+        printf("===========================\n");
+        printf("Quantidade: %d\nPreço Total: R$ %.2f\n",
+               vendas_ptr[i].quantidade, vendas_ptr[i].preco_total);
     }
+
+    // Exibe o total de vendas registradas
+    printf("\n\nTotal de vendas registradas: %d\n", total_vendas);
 }
 void menu_vendas(Venda *vendas, const Cliente *clientes, Carro *carros) {
     int opcao;

@@ -1,10 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "carros.h"
 #include "clientes.h"
 #include "vendas.h"
 
+void liberar_memoria();
 int menu_principal();
-
 void inicializarCadastro();
 
 int main() {
@@ -28,6 +29,7 @@ int main() {
                 menu_vendas(vendas, clientes, carros);
             break;
             case 0:
+                liberar_memoria();
                 printf("Finalizando o programa...\n");
             break;
             default:
@@ -51,10 +53,38 @@ int menu_principal() {
 }
 
 void inicializarCadastro() {
-    for (int i = 0; i < VENDAS_MAX; i++) {
+    // Aloca memória para os clientes
+    clientes = malloc(CLIENT_MAX * sizeof(Cliente));
+    if (clientes == NULL) {
+        printf("Erro ao alocar memória para clientes.\n");
+        exit(1);
+    }
+
+    // Inicializa os clientes
+    for (int i = 0; i < CLIENT_MAX; i++) {
         inicializarCliente(&clientes[i]);
+    }
+
+    // Inicializa outros dados (carros, vendas, etc)
+    for (int i = 0; i < VENDAS_MAX; i++) {
         inicializarCarro(&carros[i]);
         inicializarVenda(&vendas[i]);
+    }
+}
+
+
+void liberar_memoria() {
+    if (clientes_ptr != NULL) {
+        free(clientes_ptr);
+        clientes_ptr = NULL; // Defina o ponteiro como NULL para evitar acessos inválidos.
+    }
+    if (carros_ptr != NULL) {
+        free(carros_ptr);
+        carros_ptr = NULL; // Defina o ponteiro como NULL para evitar acessos inválidos.
+    }
+    if (vendas_ptr != NULL) {
+        free(vendas_ptr);
+        vendas_ptr = NULL; // Defina o ponteiro como NULL para evitar acessos inválidos.
     }
 }
 

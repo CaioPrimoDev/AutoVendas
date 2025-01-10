@@ -8,19 +8,24 @@ typedef struct {
     char fabricante[20];
     int ano_fabricacao;
     int id_carro;
-    int categoria;
+    char categoria[20];
     int estoque;
     float preco;
 } Carro;
 
-extern int total_carros ;  // Contador de carros
+// Ponteiro global para carros (dinâmico)
+extern Carro *carros_ptr;
+
+// Controle de capacidade e total de carros
+extern int capacidade_carros;
+extern int total_carros;
 extern Carro carros[CAR_MAX];
 
-void cadastrar_carro(Carro *carros);
-void listar_carros(const Carro *carros);
-void excluir_carro(Carro *carros, const char *modelo);
-void editar_carro(Carro *carros, const char *modelo);
-void buscar_carro(const Carro *carros, const char *modelo);
+void cadastrar_carro();
+void listar_carros();
+void excluir_carro(const char *modelo);
+void editar_carro(const char *modelo);
+void buscar_carro(const char *modelo);
 
 void menu_carros(Carro *carros);
 void inicializarCarro(Carro *carro);

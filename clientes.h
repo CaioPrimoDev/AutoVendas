@@ -10,17 +10,19 @@ typedef struct {
     char endereco[30];
     char data[11];
     int id_cliente;
-} Cliente;
+}Cliente;
 
+extern Cliente *clientes_ptr;
+extern int capacidade_clientes;
 extern int total_clientes;
-extern Cliente clientes[CLIENT_MAX];
+extern Cliente *clientes;
 
 
-void cadastrar_cliente(Cliente *clientes);
-void listar_clientes(const Cliente *clientes);
-void excluir_cliente(Cliente *clientes, const char *termo, int tipo);
-void editar_cliente(Cliente *clientes, const char *termo, int tipo);
-void buscar_cliente(const Cliente *clientes, const char *termo, int tipo);
+void cadastrar_cliente();
+void listar_clientes();
+void excluir_cliente(const char *termo, int tipo);
+void editar_cliente(const char *termo, int tipo);
+void buscar_cliente(const char *termo, int tipo);
 
 void menu_clientes(Cliente *clientes);
 void inicializarCliente(Cliente *cliente);
