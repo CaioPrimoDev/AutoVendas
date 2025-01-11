@@ -10,12 +10,19 @@ int capacidade_clientes = 0;
 int total_clientes = 0;
 
 void cadastrar_cliente() {
+    FILE *file = fopen("cliente_dados.txt", "a+");  // Abre/cria o arquivo no modo de gravação
+    if (file == NULL) {
+        printf("Erro ao abrir/criar o arquivo.\n");
+        return;
+    }
+
     // Inicializa memória apenas se clientes_ptr for NULL
     if (clientes_ptr == NULL) {
         printf("Inicializando clientes_ptr...\n");
         clientes_ptr = malloc(10 * sizeof(Cliente));
         if (clientes_ptr == NULL) {
             printf("\n\n!!! Erro ao alocar memória !!!\n\n");
+            fclose(file);
             return;
         }
         capacidade_clientes = 10;
@@ -25,10 +32,11 @@ void cadastrar_cliente() {
     // Verifica se é necessário realocar memória
     if (total_clientes >= capacidade_clientes) {
         printf("Re-alocando memória: capacidade atual = %d, total_clientes = %d\n", capacidade_clientes, total_clientes);
-        int nova_capacidade = capacidade_clientes * 2;
+        int nova_capacidade = capacidade_clientes * ((total_clientes / 10) + 1);
         Cliente *novo_array = realloc(clientes_ptr, nova_capacidade * sizeof(Cliente));
         if (novo_array == NULL) {
             printf("\n\n!!! Erro ao alocar memória !!!\n\n");
+            fclose(file);
             return;
         }
         clientes_ptr = novo_array;
@@ -51,124 +59,186 @@ void cadastrar_cliente() {
 
     // Atribui ID ao cliente
     cliente->id_cliente = total_clientes;
-    total_clientes++;
 
+    // Grava os dados do cliente no arquivo
+    fprintf(file, "%d,%s,%s,%s,%s,%s\n",
+            cliente->id_cliente,
+            cliente->nome,
+            cliente->cpf,
+            cliente->cell,
+            cliente->endereco,
+            cliente->data);
+
+    total_clientes++;
     printf("\n\n### Cliente cadastrado com sucesso! ###\n\n");
+
+    // Fecha o arquivo
+    fclose(file);
+
+    // Libera a memória alocada (se necessário)
+    if (total_clientes == capacidade_clientes) {
+        free(clientes_ptr);
+        clientes_ptr = NULL;
+        printf("Memória liberada após cadastro.\n");
+    }
 }
 void listar_clientes() {
+    FILE *file = fopen("cliente_dados.txt", "r"); // Abre o arquivo no modo leitura
+    if (file == NULL) {
+        printf("\n\n!!! Erro ao abrir o arquivo !!!\n\n");
+        return;
+    }
     if (total_clientes == 0) {
         printf("\n\n!!! Nenhum cliente cadastrado !!!\n\n");
         return;
     }
 
-    for (int i = 0; i < total_clientes; i++) {
+    Cliente cliente;
+    printf("\n\n### Lista de Clientes Cadastrados ###\n");
+
+    // Lê os dados do arquivo linha por linha
+    while (fscanf(file, "%d,%19[^,],%19[^,],%11[^,],%29[^,],%10[^\n]",
+                  &cliente.id_cliente, cliente.nome, cliente.cpf,
+                  cliente.cell, cliente.endereco, cliente.data) == 6) {
         printf("\n\n===========================\n");
-        printf("ID - CLIENTE: %d\n", clientes_ptr[i].id_cliente);
+        printf("ID - CLIENTE: %d\n", cliente.id_cliente);
         printf("===========================\n");
         printf("Nome: %s\nCPF: %s\nCelular: %s\nEndereco: %s\nData: %s\n",
-               clientes_ptr[i].nome, clientes_ptr[i].cpf, clientes_ptr[i].cell,
-               clientes_ptr[i].endereco, clientes_ptr[i].data);
-    }
+               cliente.nome, cliente.cpf, cliente.cell,
+               cliente.endereco, cliente.data);
+                  }
+
+    fclose(file); // Fecha o arquivo após a leitura
 }
 void excluir_cliente(const char *termo, int tipo) {
-    if (clientes_ptr == NULL || total_clientes == 0) {
-        printf("Nenhum cliente para excluir.\n");
+    FILE *arquivo = fopen("cliente_dados.txt", "r");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo para leitura.\n");
         return;
     }
 
-    int encontrado = -1;
+    FILE *temp = fopen("temp.txt", "w");
+    if (temp == NULL) {
+        printf("Erro ao criar arquivo temporário.\n");
+        fclose(arquivo);
+        return;
+    }
 
-    // Procurar o cliente pelo nome ou CPF
-    for (int i = 0; i < total_clientes; i++) {
-        Cliente cliente = clientes_ptr[i];
+    Cliente cliente;
+    int encontrado = 0;
+    int novo_id = 0; // ID sequencial a ser atribuído
+
+    while (fread(&cliente, sizeof(Cliente), 1, arquivo)) {
+        printf("DEBUG: Comparando Nome: %s com Termo: %s\n", cliente.nome, termo);
+        printf("DEBUG: Comparando CPF: %s com Termo: %s\n", cliente.cpf, termo);
+        // Verifica se o cliente atual corresponde ao critério de exclusão
         if ((tipo == 1 && strcasecmp(cliente.nome, termo) == 0) ||
             (tipo == 2 && strcmp(cliente.cpf, termo) == 0)) {
-            encontrado = i;
-            break;
+            printf("\n\nDEBUG: CLIENTE ENCONTRADO\n");
+            encontrado = 1;
+            continue; // Pula o cliente encontrado (não escreve no arquivo temporário)
             }
+
+        // Reatribui ID ao cliente restante
+        cliente.id_cliente = novo_id++;
+        fwrite(&cliente, sizeof(Cliente), 1, temp);
     }
 
-    if (encontrado == -1) {
+    fclose(arquivo);
+    fclose(temp);
+
+    if (!encontrado) {
         printf("Cliente não encontrado.\n");
+        remove("temp.txt"); // Remove o arquivo temporário se nenhum cliente foi encontrado
         return;
     }
 
-    // Remover o cliente encontrado deslocando os elementos
-    for (int i = encontrado; i < total_clientes - 1; i++) {
-        clientes_ptr[i] = clientes_ptr[i + 1];
-    }
-    total_clientes--;  // Decrementa total_clientes
-
-    // Atualizar os IDs de todos os clientes
-    for (int i = 0; i < total_clientes; i++) {
-        clientes_ptr[i].id_cliente = i;
+    // Substitui o arquivo original pelo temporário
+    if (remove("cliente_dados.txt") != 0 || rename("temp.txt", "cliente_dados.txt") != 0) {
+        printf("Erro ao atualizar o arquivo de clientes.\n");
+        return;
     }
 
-    // Reajustar a capacidade se necessário
-    if (total_clientes < capacidade_clientes / 2 && capacidade_clientes > 10) {
-        int nova_capacidade = capacidade_clientes / 2;
-        Cliente *novo_array = (Cliente *)realloc(clientes_ptr, nova_capacidade * sizeof(Cliente));
-        if (novo_array != NULL) {
-            clientes_ptr = novo_array;
-            capacidade_clientes = nova_capacidade;
-            printf("Capacidade reduzida para %d após exclusão.\n", capacidade_clientes);
-        }
-    }
-
-    printf("Cliente removido com sucesso!\n");
+    printf("Cliente removido com sucesso e IDs atualizados!\n");
 }
 void editar_cliente(const char *termo, int tipo) {
-    if (clientes_ptr == NULL || total_clientes == 0) {
-        printf("Nenhum cliente para editar.\n");
+    FILE *arquivo = fopen("cliente_dados.txt", "r");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo para leitura.\n");
         return;
     }
 
-    int encontrado = -1;
-
-    // Procurar o cliente com base no termo e no tipo
-    for (int i = 0; i < total_clientes; i++) {
-        Cliente cliente = clientes_ptr[i];
-        if ((tipo == 1 && strcasecmp(cliente.nome, termo) == 0) ||
-            (tipo == 2 && strcmp(cliente.cpf, termo) == 0)) {
-            encontrado = i;
-            break;
-            }
-    }
-
-    if (encontrado == -1) {
-        printf("Cliente não encontrado.\n");
+    FILE *temp = fopen("temp.txt", "w");
+    if (temp == NULL) {
+        printf("Erro ao criar arquivo temporário.\n");
+        fclose(arquivo);
         return;
     }
 
-    // Obter referência ao cliente encontrado
-    Cliente *cliente = &clientes_ptr[encontrado];
-
-    // Editar as informações do cliente
-    printf("Editando cliente (ID: %d)\n", cliente->id_cliente);
-    printf("Novo nome: ");
-    scanf(" %[^\n]", cliente->nome);
-    printf("Novo CPF: ");
-    scanf(" %[^\n]", cliente->cpf);
-    printf("Novo celular: ");
-    scanf(" %[^\n]", cliente->cell);
-    printf("Novo endereço: ");
-    scanf(" %[^\n]", cliente->endereco);
-    printf("Nova data de cadastro: ");
-    scanf(" %[^\n]", cliente->data);
-
-    printf("\nCliente editado com sucesso!\n");
-}
-void buscar_cliente(const char *termo, int tipo) {
-    if (clientes_ptr == NULL || total_clientes == 0) {
-        printf("Nenhum cliente cadastrado para buscar.\n");
-        return;
-    }
-
+    Cliente cliente;
     int encontrado = 0;
 
-    // Itera sobre os clientes para encontrar o termo
-    for (int i = 0; i < total_clientes; i++) {
-        Cliente cliente = clientes_ptr[i];
+    while (fread(&cliente, sizeof(Cliente), 1, arquivo)) {
+        // Verifica se o cliente atual corresponde ao critério de edição
+        if ((tipo == 1 && strcasecmp(cliente.nome, termo) == 0) ||
+            (tipo == 2 && strcmp(cliente.cpf, termo) == 0)) {
+            encontrado = 1;
+
+            // Exibir os dados atuais do cliente
+            printf("\nEditando cliente (ID: %d)\n", cliente.id_cliente);
+            printf("Nome atual: %s\n", cliente.nome);
+            printf("CPF atual: %s\n", cliente.cpf);
+            printf("Celular atual: %s\n", cliente.cell);
+            printf("Endereço atual: %s\n", cliente.endereco);
+            printf("Data atual: %s\n", cliente.data);
+
+            // Solicitar novos dados do cliente
+            printf("\nNovo nome: ");
+            scanf(" %[^\n]", cliente.nome);
+            printf("Novo CPF: ");
+            scanf(" %[^\n]", cliente.cpf);
+            printf("Novo celular: ");
+            scanf(" %[^\n]", cliente.cell);
+            printf("Novo endereço: ");
+            scanf(" %[^\n]", cliente.endereco);
+            printf("Nova data de cadastro: ");
+            scanf(" %[^\n]", cliente.data);
+
+            printf("\nCliente editado com sucesso!\n");
+        }
+
+        // Escrever o cliente (editado ou não) no arquivo temporário
+        fwrite(&cliente, sizeof(Cliente), 1, temp);
+    }
+
+    fclose(arquivo);
+    fclose(temp);
+
+    if (!encontrado) {
+        printf("Cliente não encontrado.\n");
+        remove("temp.txt"); // Remove o arquivo temporário se nenhum cliente foi editado
+        return;
+    }
+
+    // Substitui o arquivo original pelo temporário
+    if (remove("cliente_dados.txt") != 0 || rename("temp.txt", "cliente_dados.txt") != 0) {
+        printf("Erro ao atualizar o arquivo de clientes.\n");
+        return;
+    }
+}
+void buscar_cliente(const char *termo, int tipo) {
+    FILE *arquivo = fopen("cliente_dados.txt", "r");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo para leitura.\n");
+        return;
+    }
+
+    Cliente cliente;
+    int encontrado = 0;
+
+    // Itera sobre os registros do arquivo
+    while (fread(&cliente, sizeof(Cliente), 1, arquivo)) {
+        // Verifica se o cliente atual corresponde ao critério de busca
         if ((tipo == 1 && strcasecmp(cliente.nome, termo) == 0) ||
             (tipo == 2 && strcmp(cliente.cpf, termo) == 0)) {
             printf("\n===========================\n");
@@ -178,6 +248,8 @@ void buscar_cliente(const char *termo, int tipo) {
             encontrado = 1;
             }
     }
+
+    fclose(arquivo);
 
     // Exibe mensagem caso nenhum cliente seja encontrado
     if (!encontrado) {

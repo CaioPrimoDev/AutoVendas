@@ -25,6 +25,7 @@ void editar_cliente(const char *termo, int tipo);
 void buscar_cliente(const char *termo, int tipo);
 
 void menu_clientes(Cliente *clientes);
+
 void inicializarCliente(Cliente *cliente);
 
 #endif // CLIENTES_H

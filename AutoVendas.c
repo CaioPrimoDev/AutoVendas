@@ -78,6 +78,7 @@ void liberar_memoria() {
         free(clientes_ptr);
         clientes_ptr = NULL; // Defina o ponteiro como NULL para evitar acessos inválidos.
     }
+
     if (carros_ptr != NULL) {
         free(carros_ptr);
         carros_ptr = NULL; // Defina o ponteiro como NULL para evitar acessos inválidos.
