@@ -13,10 +13,10 @@ Carro carros[CAR_MAX] = {0};
 
 void cadastrar_carro() {
     // Abre o arquivo de carros para leitura e escrita
-    FILE *file = fopen("carro_dados.txt", "rb+");
+    FILE *file = fopen("carro_dados.bin", "rb+");
     if (file == NULL) {
         // Cria o arquivo caso ele não exista
-        file = fopen("carro_dados.txt", "wb+");
+        file = fopen("carro_dados.bin", "wb+");
         if (file == NULL) {
             printf("Erro ao abrir ou criar o arquivo de carros.\n");
             return;
@@ -89,7 +89,11 @@ void cadastrar_carro() {
     }
 }
 void listar_carros() {
-    FILE *file = fopen("carro_dados.txt", "rb"); // Abre o arquivo no modo binário leitura
+    FILE *file = fopen("carro_dados.bin", "rb"); // Abre o arquivo no modo binário leitura
+    if(carregar_ultimo_idCA() == 0) {
+        printf("\n\n!!! Nenhum carro cadastrado !!!\n\n");
+        return;
+    }
     if (file == NULL) {
         printf("\n\n!!! Erro ao abrir o arquivo carro_dados.txt !!!\n\n");
         return;
@@ -102,7 +106,7 @@ void listar_carros() {
     }
 
     Carro carro;
-    printf("\n\n### Lista de Carros Cadastrados ###\n");
+    printf("\n\n### Lista de Carros Cadastrados ###");
 
     // Lê os dados do arquivo registro por registro
     while (fread(&carro, sizeof(Carro), 1, file) == 1) {
@@ -117,13 +121,17 @@ void listar_carros() {
     fclose(file); // Fecha o arquivo após a leitura
 }
 void excluir_carro(const char *modelo) {
-    FILE *arquivo = fopen("carro_dados.txt", "rb"); // Abre o arquivo no modo binário leitura
+    FILE *arquivo = fopen("carro_dados.bin", "rb"); // Abre o arquivo no modo binário leitura
+    if(carregar_ultimo_idCA() == 0) {
+        printf("\n\n!!! Nenhum carro cadastrado !!!\n\n");
+        return;
+    }
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo para leitura.\n");
         return;
     }
 
-    FILE *temp = fopen("temp.txt", "wb"); // Cria um arquivo temporário no modo binário escrita
+    FILE *temp = fopen("temp.bin", "wb"); // Cria um arquivo temporário no modo binário escrita
     if (temp == NULL) {
         printf("Erro ao criar arquivo temporário.\n");
         fclose(arquivo);
@@ -156,7 +164,7 @@ void excluir_carro(const char *modelo) {
     // Se o carro não foi encontrado
     if (!encontrado) {
         printf("Erro: Carro não encontrado.\n");
-        remove("temp.txt"); // Remove o arquivo temporário, pois não houve alterações
+        remove("temp.bin"); // Remove o arquivo temporário, pois não houve alterações
         return;
     }
 
@@ -164,7 +172,7 @@ void excluir_carro(const char *modelo) {
     salvar_ultimo_idCA(novo_id - 1);
 
     // Substitui o arquivo original pelo temporário
-    if (remove("carro_dados.txt") != 0 || rename("temp.txt", "carro_dados.txt") != 0) {
+    if (remove("carro_dados.bin") != 0 || rename("temp.bin", "carro_dados.bin") != 0) {
         printf("Erro ao atualizar o arquivo de carros.\n");
         return;
     }
@@ -172,13 +180,17 @@ void excluir_carro(const char *modelo) {
     printf("Carro removido com sucesso e IDs atualizados!\n");
 }
 void editar_carro(const char *modelo) {
-    FILE *arquivo = fopen("carro_dados.txt", "rb"); // Abre o arquivo no modo binário leitura
+    FILE *arquivo = fopen("carro_dados.bin", "rb"); // Abre o arquivo no modo binário leitura
+    if(carregar_ultimo_idCA() == 0) {
+        printf("\n\n!!! Nenhum carro cadastrado !!!\n\n");
+        return;
+    }
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo para leitura.\n");
         return;
     }
 
-    FILE *temp = fopen("temp.txt", "wb"); // Cria um arquivo temporário no modo binário escrita
+    FILE *temp = fopen("temp.bin", "wb"); // Cria um arquivo temporário no modo binário escrita
     if (temp == NULL) {
         printf("Erro ao criar arquivo temporário.\n");
         fclose(arquivo);
@@ -228,18 +240,22 @@ void editar_carro(const char *modelo) {
 
     if (!encontrado) {
         printf("Carro com modelo '%s' não encontrado.\n", modelo);
-        remove("temp.txt"); // Remove o arquivo temporário se nenhuma edição foi feita
+        remove("temp.bin"); // Remove o arquivo temporário se nenhuma edição foi feita
         return;
     }
 
     // Substitui o arquivo original pelo temporário
-    if (remove("carro_dados.txt") != 0 || rename("temp.txt", "carro_dados.txt") != 0) {
+    if (remove("carro_dados.bin") != 0 || rename("temp.bin", "carro_dados.bin") != 0) {
         printf("Erro ao atualizar o arquivo de carros.\n");
         return;
     }
 }
 void buscar_carro(const char *modelo) {
-    FILE *arquivo = fopen("carro_dados.txt", "rb"); // Abre o arquivo no modo binário leitura
+    FILE *arquivo = fopen("carro_dados.bin", "rb"); // Abre o arquivo no modo binário leitura
+    if(carregar_ultimo_idCA() == 0) {
+        printf("\n\n!!! Nenhum carro cadastrado !!!\n\n");
+        return;
+    }
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo para leitura.\n");
         return;
@@ -320,7 +336,7 @@ void menu_carros(Carro *carros) {
 }
 
 int carregar_ultimo_idCA() {
-    FILE *arquivo = fopen("carro_id.txt", "r");
+    FILE *arquivo = fopen("carro_id.bin", "r");
     if (arquivo == NULL) {
         // Se o arquivo não existir, inicializa o ID como 1
         return 0;
@@ -331,7 +347,7 @@ int carregar_ultimo_idCA() {
     return ultimo_id;
 }
 void salvar_ultimo_idCA(int ultimo_id) {
-    FILE *arquivo = fopen("carro_id.txt", "w");
+    FILE *arquivo = fopen("carro_id.bin", "w");
     if (arquivo == NULL) {
         printf("Erro ao salvar o último ID.\n");
         return;

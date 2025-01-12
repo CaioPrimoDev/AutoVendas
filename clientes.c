@@ -11,10 +11,10 @@ int capacidade_clientes = 0;
 int total_clientes = 0;
 
 void cadastrar_cliente() {
-    FILE *file = fopen("cliente_dados.txt", "rb+");
+    FILE *file = fopen("cliente_dados.bin", "rb+");
     if (file == NULL) {
         // Tenta criar o arquivo se ele não existir
-        file = fopen("cliente_dados.txt", "wb+");
+        file = fopen("cliente_dados.bin", "wb+");
         if (file == NULL) {
             printf("Erro ao abrir ou criar o arquivo de clientes.\n");
             return;
@@ -84,7 +84,11 @@ void cadastrar_cliente() {
     }
 }
 void listar_clientes() {
-    FILE *file = fopen("cliente_dados.txt", "rb"); // Abre o arquivo no modo binário leitura
+    FILE *file = fopen("cliente_dados.bin", "rb"); // Abre o arquivo no modo binário leitura
+    if(carregar_ultimo_idCL() == 0) {
+        printf("\n\n!!! Nenhum cliente cadastrado !!!\n\n");
+        return;
+    }
     if (file == NULL) {
         printf("\n\n!!! Erro ao abrir o arquivo cliente_dados.txt !!!\n\n");
         return;
@@ -112,13 +116,17 @@ void listar_clientes() {
     fclose(file); // Fecha o arquivo após a leitura
 }
 void excluir_cliente(const char *termo, int tipo) {
-    FILE *arquivo = fopen("cliente_dados.txt", "rb"); // Abre o arquivo no modo binário leitura
+    FILE *arquivo = fopen("cliente_dados.bin", "rb"); // Abre o arquivo no modo binário leitura
+    if(carregar_ultimo_idCL() == 0) {
+        printf("\n\n!!! Nenhum cliente cadastrado !!!\n\n");
+        return;
+    }
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo para leitura.\n");
         return;
     }
 
-    FILE *temp = fopen("temp.txt", "wb"); // Cria um arquivo temporário no modo binário escrita
+    FILE *temp = fopen("temp.bin", "wb"); // Cria um arquivo temporário no modo binário escrita
     if (temp == NULL) {
         printf("Erro ao criar arquivo temporário.\n");
         fclose(arquivo);
@@ -153,7 +161,7 @@ void excluir_cliente(const char *termo, int tipo) {
     // Se o cliente não foi encontrado
     if (!encontrado) {
         printf("Erro: Cliente não encontrado.\n");
-        remove("temp.txt"); // Remove o arquivo temporário, pois não houve alterações
+        remove("temp.bin"); // Remove o arquivo temporário, pois não houve alterações
         return;
     }
 
@@ -161,7 +169,7 @@ void excluir_cliente(const char *termo, int tipo) {
     salvar_ultimo_idCL(novo_id - 1);
 
     // Substitui o arquivo original pelo temporário
-    if (remove("cliente_dados.txt") != 0 || rename("temp.txt", "cliente_dados.txt") != 0) {
+    if (remove("cliente_dados.bin") != 0 || rename("temp.bin", "cliente_dados.bin") != 0) {
         printf("Erro ao atualizar o arquivo de clientes.\n");
         return;
     }
@@ -169,13 +177,17 @@ void excluir_cliente(const char *termo, int tipo) {
     printf("Cliente removido com sucesso e IDs atualizados!\n");
 }
 void editar_cliente(const char *termo, int tipo) {
-    FILE *arquivo = fopen("cliente_dados.txt", "rb"); // Modo binário leitura
+    FILE *arquivo = fopen("cliente_dados.bin", "rb"); // Modo binário leitura
+    if(carregar_ultimo_idCL() == 0) {
+        printf("\n\n!!! Nenhum cliente cadastrado !!!\n\n");
+        return;
+    }
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo para leitura.\n");
         return;
     }
 
-    FILE *temp = fopen("temp.txt", "wb"); // Modo binário escrita
+    FILE *temp = fopen("temp.bin", "wb"); // Modo binário escrita
     if (temp == NULL) {
         printf("Erro ao criar arquivo temporário.\n");
         fclose(arquivo);
@@ -224,18 +236,22 @@ void editar_cliente(const char *termo, int tipo) {
 
     if (!encontrado) {
         printf("Cliente não encontrado.\n");
-        remove("temp.txt"); // Remove o arquivo temporário se nenhuma edição foi feita
+        remove("temp.bin"); // Remove o arquivo temporário se nenhuma edição foi feita
         return;
     }
 
     // Substitui o arquivo original pelo temporário
-    if (remove("cliente_dados.txt") != 0 || rename("temp.txt", "cliente_dados.txt") != 0) {
+    if (remove("cliente_dados.bin") != 0 || rename("temp.bin", "cliente_dados.bin") != 0) {
         printf("Erro ao atualizar o arquivo de clientes.\n");
         return;
     }
 }
 void buscar_cliente(const char *termo, int tipo) {
-    FILE *arquivo = fopen("cliente_dados.txt", "rb"); // Modo binário leitura
+    FILE *arquivo = fopen("cliente_dados.bin", "rb"); // Modo binário leitura
+    if(carregar_ultimo_idCL() == 0) {
+        printf("\n\n!!! Nenhum cliente cadastrado !!!\n\n");
+        return;
+    }
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo para leitura.\n");
         return;
@@ -321,7 +337,7 @@ void menu_clientes(Cliente *clientes) {
 }
 
 int carregar_ultimo_idCL() {
-    FILE *arquivo = fopen("cliente_id.txt", "r");
+    FILE *arquivo = fopen("cliente_id.bin", "r");
     if (arquivo == NULL) {
         // Se o arquivo não existir, inicializa o ID como 1
         return 0;
@@ -332,7 +348,7 @@ int carregar_ultimo_idCL() {
     return ultimo_id;
 }
 void salvar_ultimo_idCL(int ultimo_id) {
-    FILE *arquivo = fopen("cliente_id.txt", "w");
+    FILE *arquivo = fopen("cliente_id.bin", "w");
     if (arquivo == NULL) {
         printf("Erro ao salvar o último ID.\n");
         return;

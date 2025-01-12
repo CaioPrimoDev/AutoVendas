@@ -9,9 +9,9 @@ int capacidade_vendas = 0;
 Venda vendas[VENDAS_MAX] = {0};  // Inicializa a struct Venda
 
 void registrar_venda() {
-    FILE *arquivo_clientes = fopen("cliente_dados.txt", "rb");
-    FILE *arquivo_carros = fopen("carro_dados.txt", "rb+"); // rb+ para leitura e escrita
-    FILE *arquivo_vendas = fopen("vendas_dados.txt", "ab"); // ab para adicionar vendas
+    FILE *arquivo_clientes = fopen("cliente_dados.bin", "rb");
+    FILE *arquivo_carros = fopen("carro_dados.bin", "rb+"); // rb+ para leitura e escrita
+    FILE *arquivo_vendas = fopen("vendas_dados.bin", "ab"); // ab para adicionar vendas
     if (!arquivo_clientes || !arquivo_carros || !arquivo_vendas) {
         printf("\nErro ao abrir os arquivos necessários para registrar a venda.\n");
         if (arquivo_clientes) fclose(arquivo_clientes);
@@ -114,7 +114,10 @@ void registrar_venda() {
 }
 void listar_vendas() {
     // Abre o arquivo de vendas no modo binário para leitura
-    FILE *arquivo_vendas = fopen("vendas_dados.txt", "rb");
+    FILE *arquivo_vendas = fopen("vendas_dados.bin", "rb");
+    if(carregar_ultimo_idVE() == 0) {
+        printf("\n\n!!! Nenhuma venda registrada !!!\n\n");
+    }
     if (arquivo_vendas == NULL) {
         printf("\n\n!!! Erro ao abrir o arquivo !!!\n\n");
         return;
@@ -175,7 +178,7 @@ void menu_vendas(Venda *vendas, const Cliente *clientes, Carro *carros) {
 }
 
 int carregar_ultimo_idVE() {
-    FILE *arquivo = fopen("vendas_id.txt", "r");
+    FILE *arquivo = fopen("vendas_id.bin", "r");
     if (arquivo == NULL) {
         // Se o arquivo não existir, inicializa o ID como 1
         return 0;
@@ -186,7 +189,7 @@ int carregar_ultimo_idVE() {
     return ultimo_id;
 }
 void salvar_ultimo_idVE(int ultimo_id) {
-    FILE *arquivo = fopen("vendas_id.txt", "w");
+    FILE *arquivo = fopen("vendas_id.bin", "w");
     if (arquivo == NULL) {
         printf("Erro ao salvar o último ID.\n");
         return;
