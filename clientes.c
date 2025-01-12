@@ -1,3 +1,4 @@
+// ReSharper disable CppDFADeletedPointer
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,15 +11,19 @@ int capacidade_clientes = 0;
 int total_clientes = 0;
 
 void cadastrar_cliente() {
-    FILE *file = fopen("cliente_dados.txt", "a+");  // Abre/cria o arquivo no modo de gravação
+    FILE *file = fopen("cliente_dados.txt", "rb+");
     if (file == NULL) {
-        printf("Erro ao abrir/criar o arquivo.\n");
-        return;
+        // Tenta criar o arquivo se ele não existir
+        file = fopen("cliente_dados.txt", "wb+");
+        if (file == NULL) {
+            printf("Erro ao abrir ou criar o arquivo de clientes.\n");
+            return;
+        }
     }
 
     // Inicializa memória apenas se clientes_ptr for NULL
     if (clientes_ptr == NULL) {
-        printf("Inicializando clientes_ptr...\n");
+        printf("DEBUG: Inicializando clientes_ptr...\n");
         clientes_ptr = malloc(10 * sizeof(Cliente));
         if (clientes_ptr == NULL) {
             printf("\n\n!!! Erro ao alocar memória !!!\n\n");
@@ -26,22 +31,22 @@ void cadastrar_cliente() {
             return;
         }
         capacidade_clientes = 10;
-        printf("clientes_ptr inicializado com capacidade: %d\n", capacidade_clientes);
+        printf("DEBUG: clientes_ptr inicializado com capacidade: %d\n", capacidade_clientes);
     }
 
     // Verifica se é necessário realocar memória
-    if (total_clientes >= capacidade_clientes) {
-        printf("Re-alocando memória: capacidade atual = %d, total_clientes = %d\n", capacidade_clientes, total_clientes);
-        int nova_capacidade = capacidade_clientes * ((total_clientes / 10) + 1);
+    if (carregar_ultimo_idCL() >= capacidade_clientes) {
+        printf("DEBUG: Re-alocando memória: capacidade atual = %d, total_clientes = %d\n", capacidade_clientes, total_clientes);
+        int nova_capacidade = capacidade_clientes * ((carregar_ultimo_idCL() / 10) + 1);
         Cliente *novo_array = realloc(clientes_ptr, nova_capacidade * sizeof(Cliente));
         if (novo_array == NULL) {
-            printf("\n\n!!! Erro ao alocar memória !!!\n\n");
+            printf("\n\nDEBUG: !!! Erro ao alocar memória !!!\n\n");
             fclose(file);
             return;
         }
         clientes_ptr = novo_array;
         capacidade_clientes = nova_capacidade;
-        printf("Re-alocação concluída. Nova capacidade: %d\n", capacidade_clientes);
+        printf("DEBUG: Re-alocação concluída. Nova capacidade: %d\n", capacidade_clientes);
     }
 
     // Cadastra o cliente no array
@@ -58,66 +63,62 @@ void cadastrar_cliente() {
     scanf(" %[^\n]", cliente->data);
 
     // Atribui ID ao cliente
-    cliente->id_cliente = total_clientes;
+    cliente->id_cliente = carregar_ultimo_idCL();
 
-    // Grava os dados do cliente no arquivo
-    fprintf(file, "%d,%s,%s,%s,%s,%s\n",
-            cliente->id_cliente,
-            cliente->nome,
-            cliente->cpf,
-            cliente->cell,
-            cliente->endereco,
-            cliente->data);
+    // Grava os dados no arquivo
+    fseek(file, 0, SEEK_END); // Garante que os dados serão gravados no final
+    fwrite(cliente, sizeof(Cliente), 1, file);
 
-    total_clientes++;
+
+    salvar_ultimo_idCL(carregar_ultimo_idCL() + 1);
     printf("\n\n### Cliente cadastrado com sucesso! ###\n\n");
 
     // Fecha o arquivo
     fclose(file);
 
     // Libera a memória alocada (se necessário)
-    if (total_clientes == capacidade_clientes) {
+    if (carregar_ultimo_idCL() == capacidade_clientes) {
         free(clientes_ptr);
         clientes_ptr = NULL;
         printf("Memória liberada após cadastro.\n");
     }
 }
 void listar_clientes() {
-    FILE *file = fopen("cliente_dados.txt", "r"); // Abre o arquivo no modo leitura
+    FILE *file = fopen("cliente_dados.txt", "rb"); // Abre o arquivo no modo binário leitura
     if (file == NULL) {
-        printf("\n\n!!! Erro ao abrir o arquivo !!!\n\n");
+        printf("\n\n!!! Erro ao abrir o arquivo cliente_dados.txt !!!\n\n");
         return;
     }
-    if (total_clientes == 0) {
+
+    if (carregar_ultimo_idCL() == 0) {
         printf("\n\n!!! Nenhum cliente cadastrado !!!\n\n");
+        fclose(file); // Garante que o arquivo seja fechado mesmo sem clientes
         return;
     }
 
     Cliente cliente;
     printf("\n\n### Lista de Clientes Cadastrados ###\n");
 
-    // Lê os dados do arquivo linha por linha
-    while (fscanf(file, "%d,%19[^,],%19[^,],%11[^,],%29[^,],%10[^\n]",
-                  &cliente.id_cliente, cliente.nome, cliente.cpf,
-                  cliente.cell, cliente.endereco, cliente.data) == 6) {
+    // Lê os dados do arquivo registro por registro
+    while (fread(&cliente, sizeof(Cliente), 1, file) == 1) {
         printf("\n\n===========================\n");
         printf("ID - CLIENTE: %d\n", cliente.id_cliente);
         printf("===========================\n");
         printf("Nome: %s\nCPF: %s\nCelular: %s\nEndereco: %s\nData: %s\n",
                cliente.nome, cliente.cpf, cliente.cell,
                cliente.endereco, cliente.data);
-                  }
+    }
 
     fclose(file); // Fecha o arquivo após a leitura
 }
 void excluir_cliente(const char *termo, int tipo) {
-    FILE *arquivo = fopen("cliente_dados.txt", "r");
+    FILE *arquivo = fopen("cliente_dados.txt", "rb"); // Abre o arquivo no modo binário leitura
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo para leitura.\n");
         return;
     }
 
-    FILE *temp = fopen("temp.txt", "w");
+    FILE *temp = fopen("temp.txt", "wb"); // Cria um arquivo temporário no modo binário escrita
     if (temp == NULL) {
         printf("Erro ao criar arquivo temporário.\n");
         fclose(arquivo);
@@ -125,33 +126,39 @@ void excluir_cliente(const char *termo, int tipo) {
     }
 
     Cliente cliente;
-    int encontrado = 0;
-    int novo_id = 0; // ID sequencial a ser atribuído
+    int encontrado = 0; // Indica se o cliente a ser excluído foi encontrado
+    int novo_id = 0;     // ID sequencial a ser atribuído aos clientes restantes
 
-    while (fread(&cliente, sizeof(Cliente), 1, arquivo)) {
+    // Lê os clientes do arquivo original e os processa
+    while (fread(&cliente, sizeof(Cliente), 1, arquivo) == 1) {
         printf("DEBUG: Comparando Nome: %s com Termo: %s\n", cliente.nome, termo);
         printf("DEBUG: Comparando CPF: %s com Termo: %s\n", cliente.cpf, termo);
+
         // Verifica se o cliente atual corresponde ao critério de exclusão
         if ((tipo == 1 && strcasecmp(cliente.nome, termo) == 0) ||
             (tipo == 2 && strcmp(cliente.cpf, termo) == 0)) {
             printf("\n\nDEBUG: CLIENTE ENCONTRADO\n");
             encontrado = 1;
-            continue; // Pula o cliente encontrado (não escreve no arquivo temporário)
-            }
+            continue; // Pula o cliente encontrado (não o escreve no arquivo temporário)
+        }
 
         // Reatribui ID ao cliente restante
         cliente.id_cliente = novo_id++;
-        fwrite(&cliente, sizeof(Cliente), 1, temp);
+        fwrite(&cliente, sizeof(Cliente), 1, temp); // Escreve no arquivo temporário
     }
 
-    fclose(arquivo);
-    fclose(temp);
+    fclose(arquivo); // Fecha o arquivo original
+    fclose(temp);    // Fecha o arquivo temporário
 
+    // Se o cliente não foi encontrado
     if (!encontrado) {
-        printf("Cliente não encontrado.\n");
-        remove("temp.txt"); // Remove o arquivo temporário se nenhum cliente foi encontrado
+        printf("Erro: Cliente não encontrado.\n");
+        remove("temp.txt"); // Remove o arquivo temporário, pois não houve alterações
         return;
     }
+
+    // Atualiza o último ID salvo
+    salvar_ultimo_idCL(novo_id - 1);
 
     // Substitui o arquivo original pelo temporário
     if (remove("cliente_dados.txt") != 0 || rename("temp.txt", "cliente_dados.txt") != 0) {
@@ -162,13 +169,13 @@ void excluir_cliente(const char *termo, int tipo) {
     printf("Cliente removido com sucesso e IDs atualizados!\n");
 }
 void editar_cliente(const char *termo, int tipo) {
-    FILE *arquivo = fopen("cliente_dados.txt", "r");
+    FILE *arquivo = fopen("cliente_dados.txt", "rb"); // Modo binário leitura
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo para leitura.\n");
         return;
     }
 
-    FILE *temp = fopen("temp.txt", "w");
+    FILE *temp = fopen("temp.txt", "wb"); // Modo binário escrita
     if (temp == NULL) {
         printf("Erro ao criar arquivo temporário.\n");
         fclose(arquivo);
@@ -178,13 +185,14 @@ void editar_cliente(const char *termo, int tipo) {
     Cliente cliente;
     int encontrado = 0;
 
-    while (fread(&cliente, sizeof(Cliente), 1, arquivo)) {
-        // Verifica se o cliente atual corresponde ao critério de edição
+    // Lê os clientes do arquivo original
+    while (fread(&cliente, sizeof(Cliente), 1, arquivo) == 1) {
+        // Verifica se o cliente corresponde ao critério de edição
         if ((tipo == 1 && strcasecmp(cliente.nome, termo) == 0) ||
             (tipo == 2 && strcmp(cliente.cpf, termo) == 0)) {
             encontrado = 1;
 
-            // Exibir os dados atuais do cliente
+            // Exibe os dados atuais do cliente
             printf("\nEditando cliente (ID: %d)\n", cliente.id_cliente);
             printf("Nome atual: %s\n", cliente.nome);
             printf("CPF atual: %s\n", cliente.cpf);
@@ -192,7 +200,7 @@ void editar_cliente(const char *termo, int tipo) {
             printf("Endereço atual: %s\n", cliente.endereco);
             printf("Data atual: %s\n", cliente.data);
 
-            // Solicitar novos dados do cliente
+            // Solicita novos dados
             printf("\nNovo nome: ");
             scanf(" %[^\n]", cliente.nome);
             printf("Novo CPF: ");
@@ -207,7 +215,7 @@ void editar_cliente(const char *termo, int tipo) {
             printf("\nCliente editado com sucesso!\n");
         }
 
-        // Escrever o cliente (editado ou não) no arquivo temporário
+        // Escreve o cliente (editado ou não) no arquivo temporário
         fwrite(&cliente, sizeof(Cliente), 1, temp);
     }
 
@@ -216,7 +224,7 @@ void editar_cliente(const char *termo, int tipo) {
 
     if (!encontrado) {
         printf("Cliente não encontrado.\n");
-        remove("temp.txt"); // Remove o arquivo temporário se nenhum cliente foi editado
+        remove("temp.txt"); // Remove o arquivo temporário se nenhuma edição foi feita
         return;
     }
 
@@ -227,7 +235,7 @@ void editar_cliente(const char *termo, int tipo) {
     }
 }
 void buscar_cliente(const char *termo, int tipo) {
-    FILE *arquivo = fopen("cliente_dados.txt", "r");
+    FILE *arquivo = fopen("cliente_dados.txt", "rb"); // Modo binário leitura
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo para leitura.\n");
         return;
@@ -236,9 +244,9 @@ void buscar_cliente(const char *termo, int tipo) {
     Cliente cliente;
     int encontrado = 0;
 
-    // Itera sobre os registros do arquivo
-    while (fread(&cliente, sizeof(Cliente), 1, arquivo)) {
-        // Verifica se o cliente atual corresponde ao critério de busca
+    // Lê os registros do arquivo
+    while (fread(&cliente, sizeof(Cliente), 1, arquivo) == 1) {
+        // Verifica se o cliente corresponde ao critério de busca
         if ((tipo == 1 && strcasecmp(cliente.nome, termo) == 0) ||
             (tipo == 2 && strcmp(cliente.cpf, termo) == 0)) {
             printf("\n===========================\n");
@@ -312,6 +320,26 @@ void menu_clientes(Cliente *clientes) {
     } while (opcao != 0);
 }
 
+int carregar_ultimo_idCL() {
+    FILE *arquivo = fopen("cliente_id.txt", "r");
+    if (arquivo == NULL) {
+        // Se o arquivo não existir, inicializa o ID como 1
+        return 0;
+    }
+    int ultimo_id;
+    fscanf(arquivo, "%d", &ultimo_id);
+    fclose(arquivo);
+    return ultimo_id;
+}
+void salvar_ultimo_idCL(int ultimo_id) {
+    FILE *arquivo = fopen("cliente_id.txt", "w");
+    if (arquivo == NULL) {
+        printf("Erro ao salvar o último ID.\n");
+        return;
+    }
+    fprintf(arquivo, "%d", ultimo_id);
+    fclose(arquivo);
+}
 void inicializarCliente(Cliente *cliente) {
     // Inicializa os campos do cliente
     strcpy(cliente->nome, "");

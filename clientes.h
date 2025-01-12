@@ -23,9 +23,10 @@ void listar_clientes();
 void excluir_cliente(const char *termo, int tipo);
 void editar_cliente(const char *termo, int tipo);
 void buscar_cliente(const char *termo, int tipo);
-
 void menu_clientes(Cliente *clientes);
 
+int carregar_ultimo_idCL();
+void salvar_ultimo_idCL(int ultimo_id);
 void inicializarCliente(Cliente *cliente);
 
 #endif // CLIENTES_H

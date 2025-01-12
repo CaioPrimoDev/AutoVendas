@@ -26,8 +26,10 @@ void listar_carros();
 void excluir_carro(const char *modelo);
 void editar_carro(const char *modelo);
 void buscar_carro(const char *modelo);
-
 void menu_carros(Carro *carros);
+
+int carregar_ultimo_idCA();
+void salvar_ultimo_idCA(int ultimo_id);
 void inicializarCarro(Carro *carro);
 
 
