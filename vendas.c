@@ -6,12 +6,12 @@
 Venda *vendas_ptr = NULL;
 int total_vendas = 0;
 int capacidade_vendas = 0;
-Venda vendas[VENDAS_MAX] = {0};  // Inicializa a struct Venda
+Venda vendas[VENDAS_MAX] = {0};
 
 void registrar_venda() {
     FILE *arquivo_clientes = fopen("cliente_dados.bin", "rb");
-    FILE *arquivo_carros = fopen("carro_dados.bin", "rb+"); // rb+ para leitura e escrita
-    FILE *arquivo_vendas = fopen("vendas_dados.bin", "ab"); // ab para adicionar vendas
+    FILE *arquivo_carros = fopen("carro_dados.bin", "rb+");
+    FILE *arquivo_vendas = fopen("vendas_dados.bin", "ab");
     if (!arquivo_clientes || !arquivo_carros || !arquivo_vendas) {
         printf("\nErro ao abrir os arquivos necessários para registrar a venda.\n");
         if (arquivo_clientes) fclose(arquivo_clientes);
@@ -25,7 +25,6 @@ void registrar_venda() {
     Cliente cliente;
     Carro carro;
 
-    // Buscar o cliente pelo nome
     printf("\nNome do Cliente: ");
     scanf(" %[^\n]", nome_cliente);
     while (fread(&cliente, sizeof(Cliente), 1, arquivo_clientes) == 1) {
@@ -43,10 +42,9 @@ void registrar_venda() {
         return;
     }
 
-    // Buscar o carro pelo modelo
     printf("\nModelo do Carro: ");
     scanf(" %[^\n]", modelo_carro);
-    long posicao_carro = 0; // data para atualizar o estoque
+    long posicao_carro = 0;
     while (fread(&carro, sizeof(Carro), 1, arquivo_carros) == 1) {
         if (strcasecmp(carro.modelo, modelo_carro) == 0) {
             carro_encontrado = 1;
@@ -63,7 +61,6 @@ void registrar_venda() {
         return;
     }
 
-    // Verificar estoque
     printf("\nQuantidade Disponível no Estoque: %d\n", carro.estoque);
     printf("\nQuantidade desejada: ");
     scanf("%d", &quantidade);
@@ -76,17 +73,14 @@ void registrar_venda() {
         return;
     }
 
-    // Calcular preço total
     float preco_total = (float) quantidade * carro.preco;
     printf("\nPreço total da venda: R$ %.2f\n", preco_total);
 
-    // Confirmação final
     char confirmar;
     printf("\nDeseja finalizar a compra? (S/N): ");
     scanf(" %c", &confirmar);
 
     if (confirmar == 'S' || confirmar == 's') {
-        // Registrar venda
         Venda venda;
         venda.id_venda = carregar_ultimo_idVE();
         strcpy(venda.cliente_nome, cliente.nome);
@@ -94,11 +88,9 @@ void registrar_venda() {
         venda.quantidade = quantidade;
         venda.preco_total = preco_total;
 
-        // Gravar a venda no arquivo
         fwrite(&venda, sizeof(Venda), 1, arquivo_vendas);
         salvar_ultimo_idVE(venda.id_venda + 1);
 
-        // Atualizar estoque no arquivo de carros
         carro.estoque -= quantidade;
         fseek(arquivo_carros, posicao_carro, SEEK_SET);
         fwrite(&carro, sizeof(Carro), 1, arquivo_carros);
@@ -113,7 +105,6 @@ void registrar_venda() {
     fclose(arquivo_vendas);
 }
 void listar_vendas() {
-    // Abre o arquivo de vendas no modo binário para leitura
     FILE *arquivo_vendas = fopen("vendas_dados.bin", "rb");
     if(carregar_ultimo_idVE() == 0) {
         printf("\n\n!!! Nenhuma venda registrada !!!\n\n");
@@ -126,11 +117,9 @@ void listar_vendas() {
         printf("\n\n!!! Nenhuma venda registrada !!!\n\n");
     }
 
-    // Variável para armazenar uma venda temporariamente
     Venda venda;
     int total_vendas_lidas = 0;
 
-    // Percorre o arquivo e exibe as vendas cadastradas
     while (fread(&venda, sizeof(Venda), 1, arquivo_vendas) == 1) {
         printf("\n===========================\n");
         printf("Cliente: %s\nID do carro: %d\nQuantidade: %d\nPreço Total: R$ %.2f\n",
@@ -144,7 +133,6 @@ void listar_vendas() {
 
     fclose(arquivo_vendas);
 
-    // Exibe o total de vendas registradas
     if (total_vendas_lidas > 0) {
         printf("\n\nTotal de vendas registradas: %d\n", total_vendas_lidas);
     } else {
@@ -180,7 +168,6 @@ void menu_vendas(Venda *vendas, const Cliente *clientes, Carro *carros) {
 int carregar_ultimo_idVE() {
     FILE *arquivo = fopen("vendas_id.bin", "r");
     if (arquivo == NULL) {
-        // Se o arquivo não existir, inicializa o ID como 1
         return 0;
     }
     int ultimo_id;
@@ -198,7 +185,6 @@ void salvar_ultimo_idVE(int ultimo_id) {
     fclose(arquivo);
 }
 void inicializarVenda(Venda *venda) {
-    // Inicializa os campos da venda
     strcpy(venda->cliente_nome, "");
     strcpy(venda->modelo_carro, "");
     venda->id_venda = 0;

@@ -14,15 +14,11 @@ typedef struct {
     float preco_total;
 } Venda;
 
-// Ponteiro global para vendas (dinâmico)
 extern Venda *vendas_ptr;
-
-// Controle de capacidade e total de vendas
 extern int capacidade_vendas;
 extern int total_vendas;
 extern Venda vendas[VENDAS_MAX];
 
-// Funções declaradas, mas não definidas aqui
 void registrar_venda();
 void listar_vendas();
 void menu_vendas(Venda *vendas, const Cliente *clientes, Carro *carros);

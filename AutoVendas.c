@@ -9,7 +9,6 @@ int menu_principal();
 void inicializarCadastro();
 
 int main() {
-
     inicializarCadastro();
 
     int opcao;
@@ -17,15 +16,12 @@ int main() {
         opcao = menu_principal();
         switch (opcao) {
             case 1:
-                //chamarMenu_carros();
                 menu_carros(carros);
             break;
             case 2:
-                //chamarMenu_clientes();
                 menu_clientes(clientes);
             break;
             case 3:
-                //chamarMenu_vendas();
                 menu_vendas(vendas, clientes, carros);
             break;
             case 0:
@@ -42,7 +38,7 @@ int main() {
 
 int menu_principal() {
     int opcao;
-    printf("\n========== MENU PRINCIPAL ==========\n");
+    printf("\n|========== MENU PRINCIPAL ==========|\n");
     printf("1. Gerenciar Carros\n");
     printf("2. Gerenciar Clientes\n");
     printf("3. Gerenciar Vendas\n");
@@ -53,21 +49,20 @@ int menu_principal() {
 }
 
 void inicializarCadastro() {
-    // Aloca memória para os clientes
     clientes = malloc(CLIENT_MAX * sizeof(Cliente));
     if (clientes == NULL) {
         printf("Erro ao alocar memória para clientes.\n");
         exit(1);
     }
-
-    // Inicializa os clientes
     for (int i = 0; i < CLIENT_MAX; i++) {
         inicializarCliente(&clientes[i]);
     }
 
-    // Inicializa outros dados (carros, vendas, etc)
-    for (int i = 0; i < VENDAS_MAX; i++) {
+    for (int i = 0; i < CAR_MAX; i++) {
         inicializarCarro(&carros[i]);
+    }
+
+    for (int i = 0; i < VENDAS_MAX; i++) {
         inicializarVenda(&vendas[i]);
     }
 }

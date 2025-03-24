@@ -13,10 +13,7 @@ typedef struct {
     float preco;
 } Carro;
 
-// Ponteiro global para carros (dinâmico)
 extern Carro *carros_ptr;
-
-// Controle de capacidade e total de carros
 extern int capacidade_carros;
 extern int total_carros;
 extern Carro carros[CAR_MAX];
@@ -31,8 +28,5 @@ void menu_carros(Carro *carros);
 int carregar_ultimo_idCA();
 void salvar_ultimo_idCA(int ultimo_id);
 void inicializarCarro(Carro *carro);
-
-
-
 
 #endif // CARROS_H
